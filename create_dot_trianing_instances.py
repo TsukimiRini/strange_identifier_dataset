@@ -57,9 +57,9 @@ def buildForRepo(repo):
         logger.info(f"Finished {repo}, {len(results)}/{len(strange_identifiers)} completion items found")
         return results
 
-# results = buildForRepo("daydayEXP")
-    
-lsp = SyncLanguageServer.create(config, _logger, "/Users/tannpopo/coding/coding-interfere/repo_to_mine/daydayEXP")
-with lsp.start_server():
-    completion_items = lsp.request_completions("src/main/java/com/bcvgh/controller/RemoteUpdatePOC.java", 82, 38)
-    print(completion_items)
+repo_list = os.listdir(strange_identifiers_dir)
+repo_list = [repo[:-5] for repo in repo_list if repo.endswith(".json")]
+for repo in repo_list:
+    if os.path.isfile(f"{output_dir}/{repo}.json"):
+        continue
+    buildForRepo(repo)

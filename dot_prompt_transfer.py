@@ -54,33 +54,53 @@ def buildForRepo(repo, dot_list):
     if not os.path.exists(repo_path):
         return None
     logger.info(f"Start {repo_path}")
-    lsp = SyncLanguageServer.create(config, _logger, repo_path)
-    with lsp.start_server():
-        for dot in tqdm(dot_list):
-            file_name = dot["classFileName"]
-            method_start = int(dot["methodStartIdx"])
-            method_end = int(dot["methodStopIdx"])
-            dot_idx = int(dot["dot_idx"])
-            file_path = f"{repo_path}/{file_name}"
-            with open(file_path, 'r') as f:
-                file_content = f.read()
-            line, col = index_to_coordinates(file_content, dot_idx)
-            completion_items = lsp.request_completions(file_path, line-1, col)
-            gt_identifier = find_first_identifier(file_content, dot_idx+1)
-            if completion_items is None or completion_items == []:
-                print(f"failed for file {file_name}, {dot_idx}, {line}, {col}, {gt_identifier}")
-                completion_items = []
-            dot["completion_items"] = completion_items
-            dot["next_identifier"] = gt_identifier
-            dot["method_completion"] = file_content[dot_idx+1:method_end]
-            dot["line"] = line
-            dot["col"] = col
-            with open(output_path, "a") as f:
-                f.write(json.dumps(dot))
-                f.write("\n")
+    # lsp = SyncLanguageServer.create(config, _logger, repo_path)
+    # with lsp.start_server():
+    #     for dot in tqdm(dot_list):
+    #         file_name = dot["classFileName"]
+    #         method_start = int(dot["methodStartIdx"])
+    #         method_end = int(dot["methodStopIdx"])
+    #         dot_idx = int(dot["dot_idx"])
+    #         file_path = f"{repo_path}/{file_name}"
+    #         with open(file_path, 'r') as f:
+    #             file_content = f.read()
+    #         line, col = index_to_coordinates(file_content, dot_idx)
+    #         completion_items = lsp.request_completions(file_path, line-1, col)
+    #         gt_identifier = find_first_identifier(file_content, dot_idx+1)
+    #         if completion_items is None or completion_items == []:
+    #             print(f"failed for file {file_name}, {dot_idx}, {line}, {col}, {gt_identifier}")
+    #             completion_items = []
+    #         dot["completion_items"] = completion_items
+    #         dot["next_identifier"] = gt_identifier
+    #         dot["method_completion"] = file_content[dot_idx+1:method_end]
+    #         dot["line"] = line
+    #         dot["col"] = col
+    #         with open(output_path, "a") as f:
+    #             f.write(json.dumps(dot))
+    #             f.write("\n")
 
-        logger.info(f"Finished {repo}")
-        return dot_list
+    for dot in tqdm(dot_list):
+        file_name = dot["classFileName"]
+        method_start = int(dot["methodStartIdx"])
+        method_end = int(dot["methodStopIdx"])
+        dot_idx = int(dot["dot_idx"])
+        file_path = f"{repo_path}/{file_name}"
+        with open(file_path, 'r') as f:
+            file_content = f.read()
+        line, col = index_to_coordinates(file_content, dot_idx)
+        gt_identifier = find_first_identifier(file_content, dot_idx+1)
+
+        dot["context"] = file_content[:dot_idx+1]
+        dot["next_identifier"] = gt_identifier
+        dot["method_completion"] = file_content[dot_idx+1:method_end] + "}"
+        dot["line"] = line
+        dot["col"] = col
+        # with open(output_path, "a") as f:
+        #     f.write(json.dumps(dot))
+        #     f.write("\n")
+
+    logger.info(f"Finished {repo}")
+    return dot_list
 
 with open(output_path, "w") as f:
     pass
@@ -92,3 +112,6 @@ for repo in repo_to_insts.keys():
         validation_datasets.extend(result_of_repo)
     else:
         print(f"failed for {repo}")
+
+with open(output_path, "w") as f:
+    json.dump(validation_datasets, f, indent=4)

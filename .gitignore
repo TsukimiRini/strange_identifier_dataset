@@ -1,0 +1,13 @@
+monitors4codegen/
+static/
+target/
+.ipynb_checkpoints/
+*.zip
+*.log
+
+.ipynb_checkpoints
+.DS_Store
+data/
+datasets/
+logs/
+tree-sitter-java/

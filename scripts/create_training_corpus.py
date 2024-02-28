@@ -4,8 +4,24 @@ import json
 import argparse
 from tree_sitter import Language, Parser
 
+
 def point_in_range(point, start, end):
-    return start[0] < point[0] < end[0] or ( start[0] < end[0] and ((start[0] == point[0] and start[1] < point[1]) or (point[0] == end[0] and point[1] < end[1]))) or (start[0] == end[0] == point[0] and start[1] <= point[1] and point[1] <= end[1])
+    return (
+        start[0] < point[0] < end[0]
+        or (
+            start[0] < end[0]
+            and (
+                (start[0] == point[0] and start[1] < point[1])
+                or (point[0] == end[0] and point[1] < end[1])
+            )
+        )
+        or (
+            start[0] == end[0] == point[0]
+            and start[1] <= point[1]
+            and point[1] <= end[1]
+        )
+    )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -79,6 +95,7 @@ if __name__ == "__main__":
                                 "completion": byte_str[
                                     body.start_byte + 1 : method_decl.end_byte
                                 ].decode("utf8"),
+                                "lib": False,
                                 "type": "no_api_call",
                             }
                         )
@@ -107,9 +124,16 @@ if __name__ == "__main__":
                                     "file": req["file"],
                                     "context": context,
                                     "completion": completion,
-                                    "type": "getCompletion:request"
-                                    if idx == 0
-                                    else "getCompletion:generationAndRequest",
+                                    "lib": (
+                                        reqs[start_idx + idx - 1]["lib"]
+                                        if idx != 0
+                                        else False
+                                    ),
+                                    "type": (
+                                        "getCompletion:request"
+                                        if idx == 0
+                                        else "getCompletion:generationAndRequest"
+                                    ),
                                 }
                             )
                             + "\n"
@@ -135,6 +159,7 @@ if __name__ == "__main__":
                             "file": req["file"],
                             "context": context,
                             "completion": completion,
+                            "lib": req["lib"],
                             "type": "getCompletion:generation",
                         }
                     )
